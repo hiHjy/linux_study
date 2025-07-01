@@ -1,0 +1,73 @@
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <errno.h>
+#include <string.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+
+#define BUF_SIZE 4096   /* 建议用 4 KB 字节缓冲区 */
+
+int main(int argc, char *argv[])
+{
+    /* 1. 参数检查 ------------------------------------------------ */
+    if (argc != 3) {
+        fprintf(stderr, "Usage: %s <src_file> <dest_dir>\n", argv[0]);
+        return 1;
+    }
+    const char *src_path = argv[1];
+    const char *dest_dir = argv[2];
+
+    /* 2. 拼接目标文件路径 ---------------------------------------- */
+    /* 给目标路径加上最后一个 / 并保持同名复制 */
+    const char *src_name = strrchr(src_path, '/');
+    src_name = src_name ? src_name + 1 : src_path;      /* 取文件名 */
+    size_t len = strlen(dest_dir) + 1 + strlen(src_name) + 1;
+    char *dest_path = malloc(len);
+    if (!dest_path) {
+        perror("malloc");
+        return 1;
+    }
+    snprintf(dest_path, len, "%s/%s", dest_dir, src_name);
+
+    /* 3. 打开源文件 ------------------------------------------------ */
+    int src_fd = open(src_path, O_RDONLY);
+    if (src_fd == -1) {
+        perror("open src");
+        free(dest_path);
+        return 1;
+    }
+
+    /* 4. 打开/创建目标文件（若存在则截断）-------------------------- */
+    int dest_fd = open(dest_path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    if (dest_fd == -1) {
+        perror("open dest");
+        close(src_fd);
+        free(dest_path);
+        return 1;
+    }
+
+    /* 5. 复制循环 ------------------------------------------------- */
+    char buf[BUF_SIZE];
+    ssize_t nread;
+    while ((nread = read(src_fd, buf, sizeof buf)) > 0) {
+        ssize_t nwrite = 0;
+        while (nwrite < nread) {
+            ssize_t res = write(dest_fd, buf + nwrite, nread - nwrite);
+            if (res == -1) {
+                perror("write");
+                goto cleanup;
+            }
+            nwrite += res;
+        }
+    }
+    if (nread == -1)
+        perror("read");
+
+cleanup:
+    /* 6. 资源释放 ------------------------------------------------- */
+    close(src_fd);
+    close(dest_fd);
+    free(dest_path);
+    return 0;
+}
