@@ -7,9 +7,13 @@
 /**
  *  int fcntl(int fd, int cmd, ... );
  *  @brief  fcntl有三大作用，本次在学习其中的一种 ：
- *              修改文件属性(不需要打开文件)
- *              flags = fcntl(int fd, F_GETFL); 
- *              fcntl(fd, F_SETFL, int flags );
+ *              1:  修改文件属性(不需要打开文件)
+ *                  flags = fcntl(int fd, F_GETFL); 
+ *                  fcntl(fd, F_SETFL, int flags );
+ *              2:  复制文件描述符
+ *                  newfd = fcntl(int fd, F_DUPFD, arg);
+ *                  返回newfd ：arg可指定要生成fd的具体值，若arg不填或arg已被占用
+ *                              则返回最小可用的文件描述符
  *  @param  fd
  *  @param  cmd     F_GETFL    获取文件属性
  *                  F_SETFL    设置文件属性   
