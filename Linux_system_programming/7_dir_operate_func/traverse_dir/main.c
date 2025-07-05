@@ -18,15 +18,15 @@
 
 void traverse_dir(const char *path)
 {
-    struct stat statbuf;
+    struct stat statbuf_dir;
     char *tmp;
-    int ret = stat(path, &statbuf); 
+    int ret = stat(path, &statbuf_dir); 
     if(ret == -1) {
         perror("stat error");
         exit(1);
     }
 
-    int st_mode = statbuf.st_mode;
+    int st_mode = statbuf_dir.st_mode;
     if(S_ISDIR(st_mode)) {
         //如果是目录
         
@@ -54,8 +54,11 @@ void traverse_dir(const char *path)
                    
             } else {
                 //否则输出文件内容
-                int ret = write(STDOUT_FILENO, tmp, strlen(tmp));
-                putchar('\n');
+                struct stat statbuf_file;
+                stat(tmp, &statbuf_file);
+                printf("%s  size:%ld\n", tmp, statbuf_file.st_size);
+                
+                
                 if(ret == -1) {
                     perror("write error");
                     exit(1);
