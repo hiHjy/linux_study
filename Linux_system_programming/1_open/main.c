@@ -13,7 +13,7 @@
  *              O_RDONLY | O_CREAT() 
  *              O_WRONLY(只写)
  *              O_RDWR
- *              O_TRUNC 把文件清0 O_RDONLY | O_CREAT | O_TRUNC
+ *              O_TRUNC 把文件清0 O_WRONLY | O_CREAT | O_TRUNC
  *                  存在：只读方式打开，并把文件清空
  *                  不存在：创建
  * @param mode 打开一个文件若文件不存在则创建它的初始权限0xxx(八进制) 0644
