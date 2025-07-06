@@ -42,7 +42,7 @@
  *                  ├── B（pgid = A）      # BCD默认属于A的进程组所有进程默认
  *                  ├── C（pgid = A）      # 属于 A 的 进程组，group id 为 A 的 pid。
  *                  │   └── E（pgid = A）  # C创建的E，E默认继承C的进程组属于A组，即 pgid=A。
- *                  └── D（pgid = A）
+ *                  └── D（pgid = A）       #setpgid()/setsid()可以改变组id
  * 
  *  @param  wstatus 
  *  @param  options WNOHANG
