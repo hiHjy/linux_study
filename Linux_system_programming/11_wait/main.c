@@ -48,8 +48,9 @@
  *  @param  options WNOHANG
  *  
  *  @retval >0: 表示成功回收子进程的pid
- *          0： options设置WNOHANG,且没有子进程可以回收
- *          -1：回收失败，errno
+ *          0： options设置WNOHANG,无僵尸进程可以回收，但是有子进程存活
+ *          -1：  回收失败，errno没有更多子进程可等待，errno = ECHILD（**正常结束**）  
+ *               或真正出错(errno 其余值)
  * 
  * 
  * 
@@ -61,7 +62,7 @@
 
 
 //wait
-void wait_test() 
+int wait_test() 
 {
     int  pid;
     pid = fork();
@@ -90,23 +91,84 @@ void wait_test()
             exit(1);
         }
        
-    } 
+        return 1;
+    } else {
+        perror("fork error");
+        exit(-1);
+    }
     
 }
-//waitpid
-void waitpid_test()
+//waitpid回收多个子进程
+int waitpid_test()
 {
+    int pid,i;
+    for(i = 0; i < 5; ++i) {
+        pid = fork();
+        if(pid == 0)
+            break;
+        
+    }
+    
+    if(pid > 0) {
+        int wpid;
+        while( (wpid = waitpid(-1, NULL, 0)) > 0) {
+            printf("回收子进程：%d\n", wpid);
+            
+        }
+        return 1;
+    } else if(pid == 0){
+        printf("%d\n", getpid());
+        return 1;
+    } else {
+        perror("wait error");
+        exit(-1);
+    }
 
 
 
-
+}
+//回收第三个创建的进程
+int waitpid_test2()
+{
+    int pid, i, tem_pid ;
+    for(i = 0; i < 5; ++i) {
+        pid = fork();
+       
+        if(pid == 0){
+           
+            break;
+        }
+         if(i == 2) {
+                tem_pid = pid;
+                printf("要回收的进程为:%d\n", pid);
+              
+            } 
+        
+    }
+    
+    if(pid > 0) {
+       
+        int wpid;
+        sleep(1);
+        while( (wpid = waitpid(tem_pid, NULL, 0)) > 0) {
+            printf("回收子进程：%d\n", wpid);
+            
+        }
+        return 1;
+    } else if(pid == 0){
+        printf("%d\n", getpid());
+        return 1;
+    } else {
+        perror("wait error");
+        exit(-1);
+    }
 
 
 
 }
 int main(int argc, char const *argv[])
 {
-    
+    waitpid_test2();
     
 
     return 0;
