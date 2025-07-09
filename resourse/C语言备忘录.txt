@@ -1,0 +1,60 @@
+1,const
+	const char *p; 		//字符内容不可改，指针可改
+	char * const p; 	//字符内容可以改，指针不能改
+	const 在类型名前后效果一样：const char * 与 char const * 等价
+
+2,fprintf(stderr, "%s", argv[0])
+	fprintf(stderr, …) = 带格式地把错误提示写到标准错误。
+
+3,strcpy(原来的字符串,要复制的字符串);
+
+4,strcat(原来的字符串,在原来的字符串后面追加的字符串);
+	strcat不会清空原来的字符串
+
+5,perror(""):根据最近一次的错误的errno，输出错误信息+""
+
+6,fputc 
+
+	┌─────────────┐
+	│ 你的代码     │  调用 fputc()
+	└───────┬─────┘
+		▼
+	┌─────────────┐
+	│ 用户态缓冲区 │ ← stdio (fwrite/fputc) 管的内存
+	└───────┬─────┘
+		│  满了 / fflush / 关闭文件 时
+		▼
+	┌─────────────┐
+	│   内核页缓存 │ ← 1 次 write() 进入内核
+	└───────┬─────┘
+		│  落盘时机由内核后台线程决定
+		▼
+	┌─────────────┐
+	│  物理磁盘    │
+	└─────────────┘
+
+
+7,  void *memcpy(void *dest, const void *src, size_t n);
+    
+
+	从内存src复制到dest，desc和src不能有重叠的部分
+	若有重叠部分，用memmove函数
+		void *memmove(void *dest, const void *src, size_t n);
+	用途：
+		#1 拷贝结构体数组
+
+	    	#2 复制 socket 数据、二进制数据流
+
+		#3 写驱动、系统编程时传递数据缓冲区	
+
+
+	:)strcpy 专门为 “拷贝到遇 \0” 设计；
+
+	:)memcpy 是 “搬 n 字节，不管内容”；
+
+	:)要重叠就找 memmove。
+
+
+
+
+
