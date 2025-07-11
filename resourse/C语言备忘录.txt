@@ -54,7 +54,19 @@
 
 	:)要重叠就找 memmove。
 
+8，标准输出stdout
+	#1 标准输出 stdout 输出到终端是行缓冲的，putchar() 等函数不会立即输出到屏幕除非：
+		（1）缓冲区满
+		（2）遇到换行符 \n
+		（3）显式调用 fflush(stdout);
+		还有如下函数类似：printf()	fprintf()	
+	#2 标准输出 stdout 输出到文件/管道是全缓冲，只有当
+		（1）缓冲区满了
+		（2）显式调用 fflush(stdout);
+		（3）程序退出时，exit() 或 close() 会触发缓冲区刷新
 
-
-
-
+9，sprintf 就是：像 printf 一样格式化内容，但不是打印到屏幕，而是写到字符串中。
+	  	char buffer[100];
+    	int age = 25;
+   		sprintf(buffer, "I am %d years old.", age);
+    	printf("buffer = %s\n", buffer);  // 输出：I am 25 years old.
