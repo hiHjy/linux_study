@@ -49,7 +49,7 @@
 
         对于默认行为（终止/忽略等），处理动作由内核完成，处理完就清除。
 
-#4信号集操作函数
+#4 信号集操作函数
         1，int sigemptyset(sigset_t *set);             #清空信号集
         2，int sigfillset(sigset_t *set);              #填满信号集（全部置1）
         3，int sigaddset(sigset_t *set, int signum);   #添加一个信号到信号集中
@@ -70,7 +70,7 @@
         7，int sigpending(sigset_t *set); 
             @brief 查看待处理（未决）信号集
             @retval:0 , -1 errno
-#信号捕捉
+#5 信号捕捉
     #include <signal.h>
     typedef void (*sighandler_t)(int);
     -1-------------------------------------------------------------------------
@@ -81,8 +81,9 @@
             struct sigaction {
                     void     (*sa_handler)(int);
                     void     (*sa_sigaction)(int, siginfo_t *, void *);//想要信号携带数据用这个
-                    sigset_t   sa_mask;    //只作用于信号捕捉函数运行期间，用sa_mask替换PCB中mask，传0
-                    int        sa_flags;   //传0 表示默认屏蔽当前信号
+                    sigset_t   sa_mask;    //只作用于信号捕捉函数运行期间，用sa_mask替换PCB中mask，用sigemptyset(sa_mask)赋值
+        -            
+                    int        sa_flags;   //
                     void     (*sa_restorer)(void);//废弃
                 };
         (2) retval
@@ -92,3 +93,19 @@
             :)在回调函数执行期间，会使用用户自定义的mask，回调函数结束后会还原。
             :)在回调函数执行期间，进程会自动屏蔽当前信号，要设置act.sa_flags = 0
             :)阻塞的常规信号不支持排队，产生多次信号，只记录一次.（后32种信号支持排队）
+            
+
+ 标志             | 作用简述                          | 典型用法场景           |
+| -------------- | -----------------------------    | -------------------- |
+|`SA_NOCLDSTOP` | 子进程停止时不发 SIGCHLD              |忽略子进程停止信号      |
+|`SA_NOCLDWAIT` | 子进程退出不产生僵尸                   |不用 `wait` 回收子进程 |
+|`SA_NODEFER`   | handler 期间不屏蔽当前信号             |支持信号嵌套处理       |
+|`SA_RESETHAND` | 处理一次信号后恢复默认处理              |只处理一次信号         |
+|`SA_RESTART`   | 系统调用被信号中断时自动重启             |避免系统调用因信号失败  |
+| `SA_SIGINFO`  | 使用 `sa_sigaction` 结构体获取信号详细信息|需要扩展信号信息处理  |
+
+#6 慢速系统调用和其他系统调用
+    1，慢速系统调用：可能使进程永久堵塞的哪一类。read，write，pause，wait
+    2，其他系统调用
+        #慢速系统调用在阻塞期间如果收到一个信号，该系统调用会被中断，不再继续执行
+        解决方法是sa_flags = SA_RESTART;

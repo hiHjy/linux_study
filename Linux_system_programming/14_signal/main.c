@@ -77,6 +77,7 @@ void sigaction_test(int x) {
     printf("catch you!%d\n", x);
     sleep(5);
 }
+
 int main(int argc, char const *argv[])
 {   
 
@@ -91,7 +92,7 @@ int main(int argc, char const *argv[])
     /*-------sigaction------------*/
     struct sigaction act, old_act;
     act.sa_handler= sigaction_test; //设置回调函数
-    act.sa_flags = 0;               //默认屏蔽当前信号
+    act.sa_flags = SA_NODEFER;               
     sigemptyset(&act.sa_mask); //给act.sa_mask清空，表示不用拦截任何信号
     while (1) {
         int ret = sigaction(SIGINT, &act, &old_act);//注册捕捉函数
