@@ -70,3 +70,25 @@
         7，int sigpending(sigset_t *set); 
             @brief 查看待处理（未决）信号集
             @retval:0 , -1 errno
+#信号捕捉
+    #include <signal.h>
+    typedef void (*sighandler_t)(int);
+    -1-------------------------------------------------------------------------
+    sighandler_t signal(int signum, sighandler_t handler);   
+    -2-------------------------------------------------------------------------
+    int sigaction(int signum, const struct sigaction *act, struct sigaction *oldact);
+        (1)struct sigaction定义
+            struct sigaction {
+                    void     (*sa_handler)(int);
+                    void     (*sa_sigaction)(int, siginfo_t *, void *);//想要信号携带数据用这个
+                    sigset_t   sa_mask;    //只作用于信号捕捉函数运行期间，用sa_mask替换PCB中mask，传0
+                    int        sa_flags;   //传0 表示默认屏蔽当前信号
+                    void     (*sa_restorer)(void);//废弃
+                };
+        (2) retval
+                0， -1 errno
+       Note: 
+            :)回调函数 void handler(int signo) {//} 其中signo表示信号编号，内核自动传的
+            :)在回调函数执行期间，会使用用户自定义的mask，回调函数结束后会还原。
+            :)在回调函数执行期间，进程会自动屏蔽当前信号，要设置act.sa_flags = 0
+            :)阻塞的常规信号不支持排队，产生多次信号，只记录一次.（后32种信号支持排队）

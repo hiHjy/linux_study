@@ -15,7 +15,6 @@
     5，发现待处理信号集的2号信号变为1，但是进程并没有终止，说明屏蔽信号集设置成功
 
 */
-
 void procmask_test()
 {
     /*
@@ -34,14 +33,16 @@ void procmask_test()
         exit(1);
     }
     
-    if (ret == -1) {
-        perror("sigpending error");
-        exit(1);
-    }
+   
     int i = 1;
     while (1) {
-        sigpending(&pending_set);
-        for (i = 1; i < 32; i++) {
+        sigpending(&pending_set);   //获取未决信号集，等待键盘按下ctrl+c 查看set的变化
+        if (ret == -1) {
+            perror("sigpending error");
+            exit(1);
+        }
+
+        for (i = 1; i < 32; i++) {  //循环打印未决信号集的1-31号信号
             char ret = sigismember(&pending_set, i);
             sleep(1);
             if (ret) {
@@ -50,10 +51,10 @@ void procmask_test()
             } else {
                 putchar('0');
             }
-            fflush(stdout);
+            fflush(stdout);         //刷新缓冲区
             
         }
-        putchar('\n');
+        putchar('\n');  
        
     }
     
@@ -65,9 +66,41 @@ void procmask_test()
     
 }
 
+//signal 函数测试
+void signal_test(int a) {
+    printf("catch you!\n");
+    
+}
+
+//sigaction 函数测试
+void sigaction_test(int x) {
+    printf("catch you!%d\n", x);
+    sleep(5);
+}
 int main(int argc, char const *argv[])
-{
-    procmask_test();
+{   
+
+
+    //procmask_test();  //信号集操作函数测试测试
+
+    /*---------signal-------------*/
+    // while (1) {
+    //     signal(SIGINT, signal_test);
+    // } 
+
+    /*-------sigaction------------*/
+    struct sigaction act, old_act;
+    act.sa_handler= sigaction_test; //设置回调函数
+    act.sa_flags = 0;               //默认屏蔽当前信号
+    sigemptyset(&act.sa_mask); //给act.sa_mask清空，表示不用拦截任何信号
+    while (1) {
+        int ret = sigaction(SIGINT, &act, &old_act);//注册捕捉函数
+        if (ret == -1) {
+            perror("sigaction error");
+            exit(1);
+        }
+    }
+   
 
 
     return 0;
