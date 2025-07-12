@@ -41,11 +41,11 @@
 	若有重叠部分，用memmove函数
 		void *memmove(void *dest, const void *src, size_t n);
 	用途：
-		#1 拷贝结构体数组
+			#1 拷贝结构体数组
 
 	    	#2 复制 socket 数据、二进制数据流
 
-		#3 写驱动、系统编程时传递数据缓冲区	
+			#3 写驱动、系统编程时传递数据缓冲区	
 
 
 	:)strcpy 专门为 “拷贝到遇 \0” 设计；
@@ -65,8 +65,33 @@
 		（2）显式调用 fflush(stdout);
 		（3）程序退出时，exit() 或 close() 会触发缓冲区刷新
 
-9，sprintf 就是：像 printf 一样格式化内容，但不是打印到屏幕，而是写到字符串中。
+9，sprintf 
+		就是：像 printf 一样格式化内容，但不是打印到屏幕，而是写到字符串中。
 	  	char buffer[100];
     	int age = 25;
    		sprintf(buffer, "I am %d years old.", age);
     	printf("buffer = %s\n", buffer);  // 输出：I am 25 years old.
+
+10. 函数指针
+
+	函数指针的定义语法：
+		返回值类型 (*函数指针变量)(参数类型列表);
+
+	例：
+		void (*myfun)(int, int);
+			→ 定义一个函数指针变量 myfun，指向一个返回 void、参数为 int, int 的函数。
+
+	typedef 的用法：
+		typedef void (*myfun)(int, int);
+			→ 给函数指针类型 void (*)(int, int) 起别名为 myfun。
+			→ 此后可以这样定义函数指针变量：
+				myfun fun1;
+				myfun fun2;
+
+	假设有函数：
+		void test(int a, int b) { /*...*/ }
+
+	赋值与调用：
+		fun1 = test;
+		fun1(10, 20);           // 等价于 (*fun1)(10, 20);
+								// 注意：函数名本身就是函数指针，它会自动转换为函数地址
