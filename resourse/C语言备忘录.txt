@@ -72,7 +72,7 @@
    		sprintf(buffer, "I am %d years old.", age);
     	printf("buffer = %s\n", buffer);  // 输出：I am 25 years old.
 
-10. 函数指针
+10，函数指针
 
 	函数指针的定义语法：
 		返回值类型 (*函数指针变量)(参数类型列表);
@@ -95,3 +95,48 @@
 		fun1 = test;
 		fun1(10, 20);           // 等价于 (*fun1)(10, 20);
 								// 注意：函数名本身就是函数指针，它会自动转换为函数地址
+
+11，程序内存布局概览
+					+-------------------+
+					|     .text         | ← 存指令（代码段）
+					+-------------------+
+					|     .data         | ← 已初始化的全局/静态变量
+					+-------------------+
+					|     .bss          | ← 未初始化的全局/静态变量
+					+-------------------+
+					|     heap          | ← 动态分配区（malloc）
+					+-------------------+
+					|     stack         | ← 函数局部变量、返回地址等
+					+-------------------+
+
+12，stderr
+
+	    stderr 是 C 标准库定义的三个标准流之一：
+			:)stdin：标准输入（通常来自键盘）
+			:)stdout：标准输出（通常显示到屏幕）
+			:)stderr：标准错误输出（也显示到屏幕）
+
+    	#在代码中，它被声明为 FILE* 类型的全局变量（定义在 <stdio.h> 头文件中）
+		#无缓冲或行缓冲	默认不缓冲或行缓冲（立即输出），确保错误信息第一时间显示
+
+		例：    
+				// 正常输出到 stdout（可能被重定向）
+    			printf("Program started...\n");
+    
+    			// 错误信息到 stderr（总是立即显示）
+    			fprintf(stderr, "ERROR: Critical failure detected!\n");
+    
+				
+				
+				运行效果：
+						# 重定向 stdout 时，stderr 仍显示在终端
+						$ ./program > output.txt
+						ERROR: Critical failure detected!
+
+						$ cat output.txt
+						Program started...
+					
+
+			(1)当重定向输出时（如 ./program > output.txt），错误信息仍会显示在屏幕上
+			(2)即使程序崩溃或缓冲区未刷新，错误信息也能立即显示
+			(3)错误信息不会被管道操作或输出重定向丢弃
