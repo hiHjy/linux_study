@@ -140,3 +140,58 @@
 			(1)当重定向输出时（如 ./program > output.txt），错误信息仍会显示在屏幕上
 			(2)即使程序崩溃或缓冲区未刷新，错误信息也能立即显示
 			(3)错误信息不会被管道操作或输出重定向丢弃
+
+13, atoi,atol,atoll
+
+	int atoi(const char *nptr);
+    long atol(const char *nptr);
+    long long atoll(const char *nptr);
+
+	#字符串转为整数
+
+14，assert 断言
+
+	当你使用 assert(x < 0); 
+	这类断言失败时，它会终止程序并向标准错误（stderr）输出一条错误信息，
+	类似下面这样：
+		a.out: main.c:6: main: Assertion `x < 0' failed.
+		Aborted (core dumped)
+
+15，memset
+	@brief 把一块内存区域全部置为 0（清空），主要用于初始化结构体、数组等。
+
+	memset(buf, 0, sizeof(buf));  // 推荐
+
+16，static 和 extern
+
+	#static修饰的全局变量作用域仅限 当前源文件，不能被其他 .c 文件访问。
+	#普通全局变量： 默认具有外部链接属性，可以被其他文件 extern 引用。
+	#因为 static 限定了作用域在当前 .c 文件内部，
+		它是模块化编程中隐藏实现细节、避免命名冲突的好方法。
+	#extern 是 C/C++ 中的一个关键字，表示“声明一个变量或函数在别的源文件中定义”，
+		用于跨文件访问全局变量或函数。
+
+17，  basename
+
+	char *basename(char *path);
+
+	@brief	basename() 是一个 C 语言中用于获取路径中文件名部分的函数，
+			定义在头文件 <libgen.h> 中。其作用是：从一个路径字符串中提取最后的文件名部分
+			（即去掉目录路径）。
+
+18， dirname
+
+	char *dirname(char *path);
+
+		# dirname(path) 会返回路径中最后一个 / 之前的部分，即所在目录的路径。
+
+		# 如果路径中没有 /，则返回 "."，表示当前目录。
+
+		# 如果路径以多个 / 结尾，它会先剔除这些末尾的 / 再处理。
+
+		例子：
+			char path1[] = "/usr/local/bin/gcc";
+			char path2[] = "myfile.txt";
+
+			printf("dirname: %s\n", dirname(path1));  // 输出：/usr/local/bin
+			printf("dirname: %s\n", dirname(path2));  // 输出：.
