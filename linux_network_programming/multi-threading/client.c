@@ -11,7 +11,24 @@
 #include <sys/socket.h>
 #include <netinet/in.h> 
 #include <arpa/inet.h>
+#include <pthread.h>
+#include <stdint.h>
 
+void  *thread_handle(void *arg) {
+    char buf[1024];
+   
+    int cfd = (int)(intptr_t)arg;
+    int ret;
+
+    while ((ret = read(cfd, buf, sizeof(buf))) > 0) {
+                           
+        write(STDOUT_FILENO, buf, ret);
+    }   
+
+    close(cfd);
+    exit(0);
+    
+}
 
 
 
@@ -23,6 +40,7 @@ int main(int argc, char  *argv[])
         printf("usage: %s ip_address port\n", basename(argv[0]));
         exit(1);
     }    
+    int buf[1024], tmp;
     //将传入的port字符串转为整数
     int port = atoi(argv[2]);
     //创建并初始化要连接服务器的地址结构体
@@ -41,17 +59,28 @@ int main(int argc, char  *argv[])
         exit(1);
     }
     printf("连接成功\n");
-    ret = send(client_sockfd,"这是常规数据1", sizeof("这是常规数据1"),0);
-   
-    ret = send(client_sockfd,"-----", sizeof("-----"),MSG_OOB);
-    ret = send(client_sockfd,"这是常规数据2", sizeof("这是常规数据2"),0);
-    if (ret == -1) {
-        perror("send error");
+    pthread_t tid;
+    ret = pthread_create(&tid, NULL, thread_handle, (void *)(intptr_t)client_sockfd);
+    if (ret != 0) {
+        perror("pthread_create error");
         exit(1);
     }
-    
-    while(1);
-  
 
+
+    
+    while (1) {
+         
+        int ret = read(STDIN_FILENO, buf, 1024);
+        ret = write(client_sockfd, buf, ret);
+        if (ret == -1) {
+            perror("write error");
+            break;
+        }
+        
+		
+	  
+	
+    }
+  
     return 0;
 }
