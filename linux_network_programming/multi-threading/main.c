@@ -1,3 +1,4 @@
+#include <asm-generic/socket.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -17,7 +18,7 @@
 
 
 #define IP      "0.0.0.0"
-#define PORT    12344
+#define PORT    12345
 #define BACKLOG 128
 #define INET_ADDRLENGTH 16
 #define BUF_SIZE 1024
@@ -35,8 +36,10 @@ struct client_info {
 
 
 void signal_handle(int sig) {
-    stop = true;
+    shutdown(lfd, SHUT_RD);
     close(lfd);
+    stop = true;
+    
     int n;
     for (n = 0; n < i; ++n) {
         shutdown(cfd_arr[n], SHUT_RD);
@@ -75,6 +78,7 @@ void *mt_fun(void *arg) {
       
         pthread_mutex_lock(&mutex);
         NUM--;
+        
         printf("%s:%d已经断开连接,当前用户数量：%d\n", ci->ip, ci->port, NUM);
         pthread_mutex_unlock(&mutex);
         close(ci->cfd);
@@ -98,9 +102,18 @@ int main(int argc, char  *argv[])
     sigemptyset(&act.sa_mask);
     sigaction(SIGINT, &act, NULL);
     sigaction(SIGTERM, &act, NULL);
-
-
+   
+    //创建监听socket
     lfd = socket(AF_INET, SOCK_STREAM, 0);
+    // //设置端口复用
+    // int ret = setsockopt(lfd, SOL_SOCKET, SO_REUSEADDR, (void *)(intptr_t)1, sizeof(int));
+   
+    int opt = 1;
+    int ret = setsockopt(lfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int));
+     if (ret == -1) {
+        perror("setsockopt");
+    } 
+    
     struct sockaddr_in server_addr;
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(PORT);
@@ -110,7 +123,7 @@ int main(int argc, char  *argv[])
         perror("bind error");
         exit(1);
     }    
-
+    
     //启动监听
     if (listen(lfd, BACKLOG) == -1) {
         perror("listen error");
@@ -124,11 +137,18 @@ int main(int argc, char  *argv[])
         int cfd;
         //接受连接
         if ((cfd = accept(lfd, (struct sockaddr *)&client_addr, &addr_len)) == -1) {
-            if(errno == EINTR) {
+            if (errno == EINTR) {
                 continue;
+            } else if (errno == EINVAL && stop){
+                perror("accept");
+                break;
+                
+            } else {
+                perror("accept");
+                break;
+
             }
-            perror("accept");
-            break;
+           
         }
        
         

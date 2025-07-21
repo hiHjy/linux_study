@@ -67,7 +67,10 @@
 
          
 ## 并发TCP服务器
+> - lisetn函数执行后，那么服务器就会监听绑定在监听socket上的ip和端口，然后服务器会阻塞在accept，等待客户端的连接
+> - listen中第二个参数backlog指定的是可以同时有backlog个连接在一个队列中等待被accept接受，实测实际为backlog + 1个，成功被accept接受的连接，会被移出队列
 
+-> acc
 ### 多进程并发服务器
 > 多进程整体结构清晰，基本无坑，但代码还有待优化
 ```c
@@ -131,7 +134,7 @@ int main(int argc, char  *argv[])
     server_addr.sin_port = htons(PORT);
     inet_pton(AF_INET, IP, &server_addr.sin_addr);
 
-    //给监听socket绑定地址
+    //给监听socket绑定地址  
     int ret = bind(listen_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
     if (ret == -1) {
         perror("bine error");
@@ -197,9 +200,22 @@ int main(int argc, char  *argv[])
     return 0;
 }  // main 函数结束
 ```
-### 多线程并发服务器
+### TCP状态转换
+> 主动关闭的一方，会进入TIME_WAIT状态，要等待 2MSL时间才会关闭
+
+### 基本多线程并发服务器
 > 坑比较多，花费了好长时间，才实现了简陋版的优雅关闭服务器并通知所有连接着的客户端
-- 文件描述符表是进程概念，所有线程共享同一份文件描述符表，是真正的共享，主线程创建的fd=3，其他线程也可以用fd=3，如果一个线程close(fd) 那么所有线程的3号文件描述符都无法使用，在这里和进程不一样
+- 文件描述符表是进程概念，所有线程共享同一份文件描述符表，是真正的共享，主线程创建的fd=3，其他线程也可以用fd=3，如果一个线程close(fd) 那么所有线程的3号文件描述符都无法使用，在这里和进程不一样    
+  
+- 但是close(fd)只是在当前进程（或线程共享的 FD 表）中，把 FD 对应的表项删掉；但是不会中断阻塞，一个线程在 accept(lfd,…) 阻塞时，内核内部已经持有对那个打开文件描述的引用。因此，即便你在另一个线程里 close(lfd)，阻塞在 accept() 的那次调用依然把底层描述当成有效的监听 socket，继续等新的连接到来。
+- 若要中断阻塞就用shutdown（fd， how）。shutdown() 不走 “文件描述符表” 这一层，而是直接操作那个底层的“打开文件描述”或“socket 对象”，改变它的状态标志：
+    1. SHUT_RD：禁止后续的读操作；
+    2. SHUT_WR：发送 FIN，禁止写操作；
+    3. SHUT_RDWR：同时禁止读写。
+        > 执行了shutdown(fd, SHUT_RDWR)函数会导致所有引用那个底层的“打开文件描述”或“socket 对象”的文件描述符关闭
+- 文件描述符 vs. 打开文件描述
+    1. open()/socket()⟶给进程一个小整数（file descriptor），这是“钥匙”；
+    2. 内核为每个打开的对象（regular file、socket、pipe……）维护一份“打开文件描述”（open file description，或称 file object），记录状态、偏移、引用计数等。
 - `int pthread_create(pthread_t *thread, const pthread_attr_t *attr,void *(*start_routine) (void *), void *arg);`           这个函数的第4个参数，是要传给线程函数的参数，它是void* 就是什么都可以装，但是装的时候有坑。
     - 如果传的是指针，那么必要要传每个线程独一份的。
        1. 假如`while (1) {accept(...) ... char str[16] = "xxx" ... pthread_create(...,str)}`,根据测试每一次都会传入相同的地址。
@@ -213,7 +229,7 @@ int main(int argc, char  *argv[])
           - 并且在64位操作系统中会在你是正数的时候补0，负数的时候补符号位1，这样可以保证值不变，(intptr_t)&a可以保证不管是64位还是32位，不管是正数还是负数他都能保证数据转换的正确性
 - 当在使用信号时，加入ctrl + c 主动发送一个SIGINT信号，所有线程都会收到信号，但是只有一个线程能处理，谁能抢到就是谁处理。
 
- 
+
 ```c
 #include <unistd.h>
 #include <fcntl.h>
@@ -391,3 +407,8 @@ int main(int argc, char  *argv[])
 
 
 ```
+### 高并发服务器
+> epoll
+- int epoll_create(int size);
+  
+  size:
