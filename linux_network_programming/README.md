@@ -409,6 +409,42 @@ int main(int argc, char  *argv[])
 ```
 ### 高并发服务器
 > epoll
-- int epoll_create(int size);
+```c
+1. int epoll_create(int size);
   
-  size:
+    - @brief        用于创建epoll监听用的红黑树
+      
+    - @param size:  通知系统提前申请多大的空间
+  
+    - @retval       返回红黑树的文件描述符句柄
+  
+2. int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event); 
+
+    - @brief            对epoll用于监听的红黑树的各种操作(epoll_create 函数的返回值) 
+  
+    - @param epfd:      epoll_create 函数的返回值 
+    - @param op:        对监听红黑树进行什么操作：
+                        - EPOLL_CTL_ADD     添加fd到 监听红黑树
+                        - EPOLL_CTL_MOD     修改fd在 监听红黑树上的监听事件
+                        - EPOLL_CTL_DEL     将一个fd 从监听红黑树上摘下（取消监听）   
+    - @param fd:        被监听的文件描述符    
+    - @param event：    对fd对应的的文件描述符，进行op操作的具体内容是什么：
+                        - EPOLLIN / EPOLLOUT / EPOLLERR
+                        - 例：对fd进行读监听EPOLLIN ？
+  
+    - @retval           成功 0 失败-1 errno
+
+3. int epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout);
+
+    - @brief            阻塞监听红黑树上绑定的事件
+
+    - @param epfd：     上同
+    - @param events:    传入传出参数,传入一个struct epoll_event数组，函数调用结束，events装有所有就绪事件
+    - @param maxevents：最大事件数
+    - @param timeout：  epoll_wait阻塞等待多长时间？ 单位毫秒 1000ms = 1s
+    
+    - @retval           传入传出参数events数组满足事件的个数，后续可用于循环
+
+
+
+```
