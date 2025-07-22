@@ -448,3 +448,24 @@ int main(int argc, char  *argv[])
 
 
 ```
+> epoll ET模式 + 非阻塞socket中 何时内核给epoll_wait 发EPOLLIN或EPOLLOUT
+
+    - EPOLLIN
+        1. 当客户端往server的socket的接收缓冲区写入数据成功后，内核给epoll_wait发EPOLLIN
+   
+    - EPOLLOUT
+        1. 当你首次 epoll_ctl(..., EPOLLOUT) 注册关注 EPOLLOUT 时，只要发送缓冲区是“可写”的（也就是没有满），内核就会立刻报告一次 EPOLLOUT
+        2. 当服务器端写满发送缓冲区后，send返回-1并且errno = EAGAIN时表示发送缓冲区满，当对端成功接受数据后会发送ack给服务器，此时服务器就会清出部分的发送缓冲区，此时内核发现发送缓冲区可写，会给epoll_wait发送EPOLLOUT
+
+> send 返回值    
+     
+        0：成功发送了这么多字节。
+        = 0：极少见，一般不会出现（不像 recv() 的 0 代表对端关闭）。
+
+        < 0：
+
+        errno == EAGAIN：发送缓冲区满了，非阻塞模式下你要等 EPOLLOUT 再发。
+
+        errno == EINTR：被信号中断了，可以重试。
+
+        其他错误：连接被关闭、网络问题等，直接关闭 socket。
