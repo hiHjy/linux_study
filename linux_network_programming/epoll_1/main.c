@@ -251,11 +251,32 @@ int main() {
     event_add(g_efd, EPOLLIN | EPOLLET, &g_events[MAX_EVENTS]);
 
    /*---------------------------------------------------------------------------------------------------*/ 
-
+    int checkpos = 0, i;
+    //连接五秒的客户端后还不发送数据，那么就踢掉你
     while (1) {
+        for (i = 0; i < 100; i++) {
+            int idx = checkpos;
+            checkpos = (checkpos + 1) % MAX_EVENTS;
+            if (g_events[idx].status == 0) {
+                continue;
+            }
+            int duration =  time(NULL) - g_events[idx].last_active;
+            
+            if (duration > 5) {
+                
+                send(g_events[idx].fd, "连接超时,连接时长\n", strlen("连接超时\n"), 0);
+                g_events[idx].status = 0;
+                epoll_ctl(g_efd, g_events[idx].fd, EPOLL_CTL_DEL, NULL);
+                close(g_events[idx].fd);
+                printf("cfd=%d的客户端,已连接时长%d,已经被踢出,\n", g_events[idx].fd, duration);
+                
+            } 
+
+        }
+
         //readys数组给epoll_wait用，用于传出处于监听树上的节点有哪些节点响应，nfds为响应节点的数量，后面用于处理响应
         struct epoll_event readys[MAX_EVENTS + 1];
-        int nfds = epoll_wait(g_efd, readys, MAX_EVENTS + 1, -1);
+        int nfds = epoll_wait(g_efd, readys, MAX_EVENTS + 1, 1000);
         
         
         //处理响应
