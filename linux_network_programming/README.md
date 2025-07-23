@@ -448,7 +448,7 @@ int main(int argc, char  *argv[])
 
 
 ```
-> epoll ET模式 + 非阻塞socket中 何时内核给epoll_wait 发EPOLLIN或EPOLLOUT
+> epoll ET模式 + 非阻塞socket中 何时内核给epoll_wait 发EPOLLIN或EPOLLOUT？
 
     - EPOLLIN
         1. 当客户端往server的socket的接收缓冲区写入数据成功后，内核给epoll_wait发EPOLLIN
@@ -469,3 +469,17 @@ int main(int argc, char  *argv[])
         errno == EINTR：被信号中断了，可以重试。
 
         其他错误：连接被关闭、网络问题等，直接关闭 socket。
+
+    > epoll 总结：
+        - epoll 本质上是个事件通知机制，它的作用就是：告诉你：哪个 fd 现在可以做某个操作了（读/写）！比如：EPOLLIN：你这个 fd 的接收缓冲区“现在有数据可读”，EPOLLOUT：你这个 fd 的发送缓冲区“现在有空间可写”。
+  
+        - 有两种触发模式:LT ET
+          - LT:只要有数据就会触发（水平触发） #如不设置边缘触发，则默认水平触发
+          - ET：只有当缓冲区状态发生变化时才触发，且只触发一次 （边缘触发）
+        
+        
+        -  ET模式下读写一定要循环直到 EAGAIN,在 ET 模式下，EPOLLIN 和 EPOLLOUT 一旦触发后，必须将数据读完/写完直到返回 EAGAIN，否则不会再次触发。如果你不这么做，在缓冲区没读空或没写完的情况下，再次进 epoll_wait 是不会收到通知的。
+    
+        -epoll流程图
+
+           
