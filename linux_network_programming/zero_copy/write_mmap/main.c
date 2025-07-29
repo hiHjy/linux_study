@@ -23,7 +23,7 @@ int main(int argc, char const *argv[])
     int offset;
     for (offset = 0; offset < f_in_stat.st_size; offset += CHUNK_SIZE) {
         int  len = offset + CHUNK_SIZE > f_in_stat.st_size ? f_in_stat.st_size - offset : CHUNK_SIZE;
-        write(fd_out, addr, len);
+        write(fd_out, addr + offset, len);
     }
 
     close(fd_in);
